@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stdio.h>
+#include <Windows.h>
 //#include <GL/gl.h>
 //#include <GL/glu.h>
 //#include <GL/glut.h>
@@ -37,6 +38,7 @@ float playerX = 0.0f, playerY = 0.0f, playerZ = 20.0f;
 float playerSX = 0.09f, playerSY = 0.09f, playerSZ = 0.09f;
 float stepZ = 1, stepX = 1;
 bool isMovingF = false, isMovingB = false, isMovingL = false, isMovingR = false, isMoving = false;
+float playerLastZ = playerZ;
 
 int main(int argc, char* argv[])
 {
@@ -208,9 +210,16 @@ void update()
 {
 	//update your variables here
 	sleep(2.0 / 60.0);
+	if(abs(playerZ)-abs(playerLastZ) >= 0){
+
+	}
+
 	if(!isMoving){
 		playerSY = .09;
+	}else{
+		PlaySound(L"pingas.wav", NULL, SND_ASYNC|SND_FILENAME);
 	}
+
 	if(isMovingF){
 		playerZ -= stepZ;
 		playerSY = .15;
