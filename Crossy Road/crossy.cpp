@@ -170,7 +170,7 @@ void display()
 	
 	player(charchater1);
 	
-	moveObject(car1, 0, 20, 15, 30);
+	//moveObject(car1, 0, 5, 15, 30);
 
 	glutSwapBuffers();
 }
@@ -228,6 +228,7 @@ void update()
 		playerSY = .09;
 	}else{
 		PlaySound(L"pingas.wav", NULL, SND_ASYNC|SND_FILENAME);
+
 	}
 
 	if(isMovingF){
