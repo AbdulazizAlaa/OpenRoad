@@ -210,8 +210,15 @@ void update()
 {
 	//update your variables here
 	sleep(2.0 / 60.0);
-	if(abs(playerZ)-abs(playerLastZ) >= 0){
-
+	cout << sqrt(abs((playerZ*playerZ)-(playerLastZ*playerLastZ))) << endl;
+	if(sqrt(abs((playerZ*playerZ)-(playerLastZ*playerLastZ))) >= 7){
+		eyeZ -= 2.0f;
+		//eyeX -= 0.2f;
+		//eyeY += 5.0f;
+		centerX = playerX;
+		centerY = playerY;
+		centerZ = playerZ-20;
+		playerLastZ = playerZ;
 	}
 
 	if(!isMoving){
