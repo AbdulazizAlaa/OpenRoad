@@ -18,6 +18,7 @@
 # Build results
 Debug/
 Release/
+Crossy Road/Debug/
 
 *_i.c
 *_p.c
