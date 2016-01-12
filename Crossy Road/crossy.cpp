@@ -26,6 +26,7 @@ void update();
 void display();
 void drawQuad(int x, int y);
 void player(ObjModel & player);
+void moveObject(ObjModel x, int xmin, int xmax, int z, int rate);
 
 ObjModel mountain;
 ObjModel building;
@@ -69,7 +70,7 @@ void init()
 	mountain.load("mountain/lowpolymountains.obj");
 	charchater1.load("chr_old.obj");
 	//building.load("Building1.obj");
-	//car1.load("car1.obj");
+	car1.load("car1.obj");
 
 }
 
@@ -169,6 +170,8 @@ void display()
 	
 	player(charchater1);
 	
+	moveObject(car1, 0, 20, 15, 30);
+
 	glutSwapBuffers();
 }
 
@@ -264,4 +267,27 @@ void player(ObjModel & player)
         glScalef(playerSX, playerSY, playerSZ);
         player.draw();
     glPopMatrix();
+}
+
+void moveObject(ObjModel x, int xmin, int xmax, int z, int rate)
+{
+
+	
+		// here i am setting the initial object z to put it into the proper street 
+		glPushMatrix();
+        glTranslatef(0.0f, 0.0f, (float)z);
+		x.draw();
+		glPopMatrix();
+		// the formula xmax - xmin/ rate is  used such that the rate is the no. of steps taken by the object and this formula define 
+		// each how much diffrence in x is taken in each object for example xmin = 10 xmax =20 and rate is 50 so 20-10/50=0.2 
+		// that is the value of each step 
+	for (int i=xmin;i<xmax;i+=((xmax-xmin)/rate))
+	
+	{
+		glPushMatrix();
+        glTranslatef(float (i), 0.0f, 0.0f);
+		//glScalef(0.09f, 0.09f, 0.09f);
+        x.draw();
+		glPopMatrix();
+	}
 }
