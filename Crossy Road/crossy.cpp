@@ -7,12 +7,14 @@
 //#include <GL/glut.h>
 #include <vector>
 #include <cmath>
+#include <GL/freeglut.h>
+
 
 #include "Sleep.h"
 #include "ObjLibrary/ObjModel.h"
 #include "ObjLibrary/TextureManager.h"
 #include "ObjLibrary/TextureBmp.h"
-#include "GetGlut.h"
+//#include "GetGlut.h"
 
 #define KEY_ESCAPE 27
 
@@ -26,33 +28,38 @@ void specialInput(int key, int x, int y);
 void reshape(int w, int h);
 void update();
 void display();
-void player(ObjModel & player);
-void moveObject(ObjModel x,float  z, float  xmin, float xmax,float scale,float  y,int steps,int i=0);
+void player();
+void drawCar(float  y, float z, float scale, int i);
+void moveCar(float xmax, float step, int i);
+void drawRoad(int x);
+
 
 ObjModel mountain; //mountain model object
 ObjModel building; //building model object
-ObjModel charchater1; //first character model object
+ObjModel player1; //first character model object
 ObjModel car1; //car model object
 ObjModel road;
 ObjModel grass;
 
 struct StepObj {
-	ObjModel model;
+	//ObjModel model;
 	bool needUpdate;
 	int z;
 	int type;
 };
 
-StepObj stepObj[15];
-
-float count_steps[]={0,0,0,0,0,0,0,0,0,0}; // array of counters for the car steps
+StepObj stepObj[10];
+float roadZ = -30.0f, roadX = 10.0f;
+float carXMin = -20.f;
+float count_steps[]={carXMin, carXMin, carXMin, carXMin, carXMin, carXMin, carXMin, carXMin, carXMin, carXMin}; // array of counters for the car steps
 float eyeX = 5.0f, eyeY = 10.0f, eyeZ = -10.0f; // Look up eye (camera) position x,y,z
 float centerX = -5.0f, centerY = -5.0f, centerZ = -30.0f; // Look up center look position x,y,z
 float playerX = 0.0f, playerY = 0.0f, playerZ = -20.0f; // Player Position x,y,z
 float playerSX = 0.09f, playerSY = 0.09f, playerSZ = 0.09f; // Player scale x,y,z
 float playerAngle = 180.f;
-float stepZ = 1, stepX = 1; // Player step in y,z
+float stepZ = 4, stepX = 1; // Player step in y,z
 bool isMovingF = false, isMovingB = false, isMovingL = false, isMovingR = false, isMoving = false; // booleans for moving in every direction
+bool isDead = false;
 float playerLastZ = playerZ; // Last position of player for camera z position 
 float minWX = 0, maxWX = 0; // min and max position player can go in the window
 int winW = 500, winH = 700; // width and height of the window
@@ -74,25 +81,16 @@ int main(int argc, char* argv[])
 	glutDisplayFunc(display);
 	glutMouseFunc(mouse);
 
+	init();
+
 	//Initialize step object buffer update bool
-	for (int i = 0; i < 15; i++)
+	for (int i = 0; i < 10; i++)
 	{
 		stepObj[i].needUpdate = true;
 		stepObj[i].z = -10*i;
 		stepObj[i].type = rand() % 2;	
-		if(stepObj[i].type == 0)
-		{
-			stepObj[i].model = road;
-			//stepObj[i].needUpdate = false;
-		}
-		else if(stepObj[i].type == 1)
-		{
-			stepObj[i].model = grass;
-			//stepObj[i].needUpdate = false;
-		}	
+		stepObj[i].needUpdate = false;
 	}
-
-	init();
 
 	glutMainLoop();
 
@@ -103,9 +101,7 @@ void init()
 {
 	initDisplay();
 	
-	mountain.load("mountain/lowpolymountains.obj");
-	charchater1.load("chr_old.obj");
-	building.load("Building1.obj");
+	player1.load("chr_old.obj");
 	car1.load("car1.obj");
 	road.load("Road_Wide.obj");
 	grass.load("Grass.obj");
@@ -122,7 +118,7 @@ void initDisplay()
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
-	//glEnable(GLUT_MULTISAMPLE);
+
 	//GLfloat lmodel_ambient[] = { 1.0, 1.0, 1.0, 1.0 };
 	//glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
 
@@ -167,84 +163,70 @@ void display()
 	//glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.0);
 	glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 1.0);
 
-	//Material 
-	//GLfloat white[] = {0.8f, 0.8f, 0.8f, 1.0f};
-	//GLfloat cyan[] = {0.f, .8f, .8f, 1.f};
-	//glMaterialfv(GL_FRONT, GL_DIFFUSE, cyan);
-	//glMaterialfv(GL_FRONT, GL_SPECULAR, white);
-	//GLfloat shininess[] = {50};
-	//glMaterialfv(GL_FRONT, GL_SHININESS, shininess);
-
-	for (int i = 0; i < 15; i++)
-	{
-		glPushMatrix();
-			glTranslatef(0, -1, stepObj[i].z-10);
-			glRotatef(90, 0, 1, 0);
-			stepObj[i].model.draw();
-		glPopMatrix();
-	}
+	drawRoad(0);
+	drawRoad(1);
+	drawRoad(2);
+	drawRoad(3);
+	drawRoad(4);
+	drawRoad(5);
+	drawRoad(6);
+	drawRoad(7);
+	drawRoad(8);
+	drawRoad(9);
 	
+	player();
 
-   	glPushMatrix();
-        glTranslatef(-20.0f, 0.0f, -30.0f);
-		glRotatef(90.0f, 0.0f, 1.0f, 0.0f);
-		glColor3f(0.0f,0.0f,0.0f);
-        //glScalef(2.0f, 3.0f, 1.0f);
-        mountain.draw();
-    glPopMatrix();
+	/*if(isDead){
+		glRasterPos2i(100, 120);
+		glColor4f(0.0f, 0.0f, 1.0f, 1.0f);
+		string s = "sss";
 
+		glutBitmapString(GLUT_BITMAP_HELVETICA_18, s.c_str());
+	}*/
 
-	glPushMatrix();
-        glTranslatef(-20.0f, 0.0f, -40.0f);
-		glRotatef(90.0f, 0.0f, 1.0f, 0.0f);
-		glColor3f(0.0f,0.0f,0.0f);
-		
-        //glScalef(2.0f, 3.0f, 1.0f);
-        mountain.draw();
-    glPopMatrix();
-
-	glPushMatrix();
-        glTranslatef(5.0f, 0.0f, 20.0f);
-		//glRotatef(45.0f, 0.0f, 1.0f, 0.0f);
-		//glColor3f(0.0f,0.0f,0.0f);
-        glScalef(0.05f, 0.05f, 0.05f);
-        //car1.draw();
-    glPopMatrix();
-	
-	player(charchater1);
-	
-	moveObject(car1,-10,1,10,0.09,0,2,0);
-	
 	glutSwapBuffers();
 }
 
-void player(ObjModel & player)
+void player()
 {
 	glPushMatrix();
         glTranslatef(playerX, playerY, playerZ);
 		glRotatef(playerAngle, 0.0f, 1.0f, 0.0f);
         glScalef(playerSX, playerSY, playerSZ);
-        player.draw();
+        player1.draw();
     glPopMatrix();
 }
 
-void moveObject(ObjModel x, float  z, float  xmin, float xmax, float scale, float  y, int steps, int i)
+void drawRoad(int i)
 {
-		//i created an array of 10 floats assuming we will create no more than 10 cars per frame 
-		// steps is the no. that controls the interpolation of a car 
-		// i is a variable of each car which is used to get the proper element in count_steps which belongs to this car
-		int step1=(xmax-xmin)/steps;
-		count_steps[i]+=step1;
+	glPushMatrix();
+		glTranslatef(0, -1.0f, stepObj[i].z);
+		glRotatef(90.0f, 0.0f, 1.0f, 0.0f);
+		if(stepObj[i].type == 0){
+			road.draw();
+			drawCar(10.0f, 0, 0.09f, i);
+		}else if(stepObj[i].type == 1){
+			grass.draw();
+		}
+	glPopMatrix();
+		
 
-		glPushMatrix();
-			glScalef(scale,scale,scale);
-			glTranslatef(count_steps[i], 0.0f, z);
-			glRotatef(90.0f, 0.0f, 1.0f, 0.0f);        
-			x.draw();
-		glPopMatrix();
- 
+}
 
+void moveCar(float xmax, float step, int i)
+{
+	if(count_steps[i] < xmax)
+		count_steps[i] += step;
+}
 
+void drawCar(float  y, float z, float scale, int i)
+{
+	glPushMatrix();
+		glTranslatef(0, 1, count_steps[i]);
+		glScalef(scale,scale,scale);
+		//glRotatef(90.0f, 0.0f, 1.0f, 0.0f);        
+		car1.draw();
+	glPopMatrix();
 }
 
 void mouse(int button, int state, int x, int y)
@@ -252,8 +234,8 @@ void mouse(int button, int state, int x, int y)
 	if(button == GLUT_LEFT_BUTTON){
 		//cout << x << ":" << y <<endl;
 		//cout << winW << ":" << winH << endl;
-		//cout << abs(playerZ)-abs(playerLastZ) << endl;
-		//cout << playerX << ":" << playerY << ":" << playerZ << endl;
+		cout << abs(playerZ)-abs(playerLastZ) << endl;
+		cout << playerX << ":" << playerY << ":" << playerZ << endl;
 	}
 }
 
@@ -296,75 +278,92 @@ void update()
 	
 	//update your variables here
 	sleep(2.0 / 60.0);
-	//cout << sqrt(abs((playerZ*playerZ)-(playerLastZ*playerLastZ))) << endl;
-	if(abs(playerZ)-abs(playerLastZ) >= 1){
-		eyeZ -= 1.0f;
-		centerZ -= 1.0f;
-		playerLastZ = playerZ;
-	}
-
-	if(!isMoving){
-		playerSY = .09;
-	}else{
-		PlaySound(L"pingas.wav", NULL, SND_ASYNC|SND_FILENAME);
-	}
-
-	if(playerX < -10.0f){
-		// do nothing
-		playerX = -10.0f;
-		playerSY = .09;
-	}if(playerX > 9.0f){
-		playerX = 9.0f;
-		playerSY = .09;
-	}else if(isMovingF){
-		playerZ -= stepZ;
-		playerSY = .15;
-		playerAngle = 180;
-		isMovingF = false;
-		isMoving = false;
-	}else if(isMovingB){
-		playerZ += stepZ;
-		playerSY = .15;
-		playerAngle = 0;
-		isMovingB = false;
-		isMoving = false;
-	}else if(isMovingR){
-		playerX += stepX;
-		playerSY = .15;
-		playerAngle = 90;
-		isMovingR = false;
-		isMoving = false;
-	}else if(isMovingL){
-		playerX -= stepX;
-		playerSY = .15;
-		playerAngle = 270;
-		isMovingL = false;
-		isMoving = false;
-	}
 	
+	for(int i=0 ; i<10 ; i++)
+	{
+		
+		if(playerZ > stepObj[i].z-2 && playerZ < stepObj[i].z+2){
+			//cout << i << "collisionZ ::" << count_steps[i] << endl;
+			if(playerX > count_steps[i]-3 && playerX < count_steps[i]+3){
+				cout << "car: " <<  i << " :: collision" << endl;
+				isDead = true;
+			}
+		}
 
-		for (int i = 0; i < 15; i++)
+	}
+
+
+	if(!isDead){
+	
+		if(abs(playerZ)-abs(playerLastZ) >= 1){
+			eyeZ -= 4.0f;
+			centerZ -= 4.0f;
+			playerLastZ = playerZ;
+		}
+		if(!isMoving){
+			playerSY = .09;
+		}else{
+			PlaySound(L"pingas.wav", NULL, SND_ASYNC|SND_FILENAME);
+		}
+
+		if(playerX < -10.0f){
+			// do nothing
+			playerX = -10.0f;
+			playerSY = .09;
+		}if(playerX > 9.0f){
+			playerX = 9.0f;
+			playerSY = .09;
+		}else if(isMovingF){
+			playerZ -= stepZ;
+			playerSY = .15;
+			playerAngle = 180;
+			isMovingF = false;
+			isMoving = false;
+		}else if(isMovingB){
+			playerZ += stepZ;
+			playerSY = .15;
+			playerAngle = 0;
+			isMovingB = false;
+			isMoving = false;
+		}else if(isMovingR){
+			playerX += stepX;
+			playerSY = .15;
+			playerAngle = 90;
+			isMovingR = false;
+			isMoving = false;
+		}else if(isMovingL){
+			playerX -= stepX;
+			playerSY = .15;
+			playerAngle = 270;
+			isMovingL = false;
+			isMoving = false;
+		}
+	
+		for (int i = 0; i < 10; i++)
 		{
-			if(abs(stepObj[i].z - playerZ) > 45 && stepObj[i].z > playerZ)
-				{
-					stepObj[i].z -= 150;
-					stepObj[i].needUpdate = true;
-				}			
+			if(abs(stepObj[i].z - playerZ) > 20 && stepObj[i].z > playerZ)
+			{
+				stepObj[i].z -= 100;
+				stepObj[i].needUpdate = true;
+				count_steps[i] = carXMin;
+			}			
 			if(stepObj[i].needUpdate)
 			{
 				stepObj[i].type = rand() % 2;
-				if(stepObj[i].type == 0)
-				{
-					stepObj[i].model = road;
-				}
-				else if(stepObj[i].type == 1)
-				{
-					stepObj[i].model = grass;
-				}
 				stepObj[i].needUpdate = false;
 			}
 		}
 
+	}else{
+		playerSX = .2;
+		playerSY = .01;
+		playerSZ = .2;
+	}
+
+	for(int i=0 ; i<10 ; i++)
+	{
+		moveCar(100, 0.5f, i);
+	}
 	
 	winW = glutGet(GLUT_WINDOW_WIDTH);
 	winH = glutGet(GLUT_WINDOW_HEIGHT);
