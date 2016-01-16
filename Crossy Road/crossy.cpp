@@ -50,6 +50,7 @@ float eyeX = 5.0f, eyeY = 10.0f, eyeZ = -10.0f; // Look up eye (camera) position
 float centerX = -5.0f, centerY = -5.0f, centerZ = -30.0f; // Look up center look position x,y,z
 float playerX = 0.0f, playerY = 0.0f, playerZ = -20.0f; // Player Position x,y,z
 float playerSX = 0.09f, playerSY = 0.09f, playerSZ = 0.09f; // Player scale x,y,z
+float playerAngle = 180.f;
 float stepZ = 1, stepX = 1; // Player step in y,z
 bool isMovingF = false, isMovingB = false, isMovingL = false, isMovingR = false, isMoving = false; // booleans for moving in every direction
 float playerLastZ = playerZ; // Last position of player for camera z position 
@@ -61,7 +62,7 @@ int main(int argc, char* argv[])
 	srand(time(NULL));
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH | GLUT_RGB);
-
+	//glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH | GLUT_RGB | GLUT_MULTISAMPLE);
 	glutInitWindowSize(winH, winW);
 	glutInitWindowPosition(0, 0);
 	glutCreateWindow("Crossy Road");
@@ -78,19 +79,16 @@ int main(int argc, char* argv[])
 	{
 		stepObj[i].needUpdate = true;
 		stepObj[i].z = -10*i;
-		if(stepObj[i].needUpdate)
-		{
-			stepObj[i].type = rand() % 2;	
-		}
+		stepObj[i].type = rand() % 2;	
 		if(stepObj[i].type == 0)
 		{
 			stepObj[i].model = road;
-			stepObj[i].needUpdate = false;
+			//stepObj[i].needUpdate = false;
 		}
 		else if(stepObj[i].type == 1)
 		{
 			stepObj[i].model = grass;
-			stepObj[i].needUpdate = false;
+			//stepObj[i].needUpdate = false;
 		}	
 	}
 
@@ -117,14 +115,14 @@ void init()
 
 void initDisplay()
 {
-	glClearColor(0.5f, 0.5f, 0.5f, 0.0);
+	glClearColor(0.0f, 0.5f, 1.0f, 0.0);
 	glColor3f(0.0, 0.0, 0.0);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
-
+	//glEnable(GLUT_MULTISAMPLE);
 	//GLfloat lmodel_ambient[] = { 1.0, 1.0, 1.0, 1.0 };
 	//glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
 
@@ -138,6 +136,7 @@ void reshape(int w, int h)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(60, (GLdouble)w / (GLdouble)h, 1.0, 1000.0);
+	
 	glMatrixMode(GL_MODELVIEW);
 
 	glutPostRedisplay();
@@ -157,16 +156,16 @@ void display()
 	GLfloat light_ambient[] = { 1.0, 1.0, 1.0, 1.0 };
 	GLfloat light_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
 	GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-	GLfloat light_position[] = { 1.0, 1.0, 1.0, 0.0 };
+	GLfloat light_position[] = { 10.0, 25.0, 1.0, 0.0 };
 
 	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
 	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 
-	glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.0);
-	glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.0);
-	glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.0);
+	//glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.0);
+	//glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.0);
+	glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 1.0);
 
 	//Material 
 	//GLfloat white[] = {0.8f, 0.8f, 0.8f, 1.0f};
@@ -179,7 +178,7 @@ void display()
 	for (int i = 0; i < 15; i++)
 	{
 		glPushMatrix();
-			glTranslatef(0, -1, stepObj[i].z-(10));
+			glTranslatef(0, -1, stepObj[i].z-10);
 			glRotatef(90, 0, 1, 0);
 			stepObj[i].model.draw();
 		glPopMatrix();
@@ -205,14 +204,6 @@ void display()
     glPopMatrix();
 
 	glPushMatrix();
-        glTranslatef(0.0f, 0.0f, 10.0f);
-		//glRotatef(45.0f, 0.0f, 1.0f, 0.0f);
-		//glColor3f(0.0f,0.0f,0.0f);
-        glScalef(0.05f, 0.05f, 0.05f);
-        //building.draw();
-    glPopMatrix();
-
-	glPushMatrix();
         glTranslatef(5.0f, 0.0f, 20.0f);
 		//glRotatef(45.0f, 0.0f, 1.0f, 0.0f);
 		//glColor3f(0.0f,0.0f,0.0f);
@@ -223,7 +214,7 @@ void display()
 	player(charchater1);
 	
 	moveObject(car1,-10,1,10,0.09,0,2,0);
-
+	
 	glutSwapBuffers();
 }
 
@@ -231,7 +222,7 @@ void player(ObjModel & player)
 {
 	glPushMatrix();
         glTranslatef(playerX, playerY, playerZ);
-		glRotatef(180.0f, 0.0f, 1.0f, 0.0f);
+		glRotatef(playerAngle, 0.0f, 1.0f, 0.0f);
         glScalef(playerSX, playerSY, playerSZ);
         player.draw();
     glPopMatrix();
@@ -261,8 +252,8 @@ void mouse(int button, int state, int x, int y)
 	if(button == GLUT_LEFT_BUTTON){
 		//cout << x << ":" << y <<endl;
 		//cout << winW << ":" << winH << endl;
-		cout << abs(playerZ)-abs(playerLastZ) << endl;
-		cout << playerX << ":" << playerY << ":" << playerZ << endl;
+		//cout << abs(playerZ)-abs(playerLastZ) << endl;
+		//cout << playerX << ":" << playerY << ":" << playerZ << endl;
 	}
 }
 
@@ -302,11 +293,10 @@ void specialInput(int key, int x, int y)
 
 void update()
 {
-
+	
 	//update your variables here
 	sleep(2.0 / 60.0);
 	//cout << sqrt(abs((playerZ*playerZ)-(playerLastZ*playerLastZ))) << endl;
-
 	if(abs(playerZ)-abs(playerLastZ) >= 1){
 		eyeZ -= 1.0f;
 		centerZ -= 1.0f;
@@ -329,47 +319,51 @@ void update()
 	}else if(isMovingF){
 		playerZ -= stepZ;
 		playerSY = .15;
+		playerAngle = 180;
 		isMovingF = false;
 		isMoving = false;
 	}else if(isMovingB){
 		playerZ += stepZ;
 		playerSY = .15;
+		playerAngle = 0;
 		isMovingB = false;
 		isMoving = false;
 	}else if(isMovingR){
 		playerX += stepX;
 		playerSY = .15;
+		playerAngle = 90;
 		isMovingR = false;
 		isMoving = false;
 	}else if(isMovingL){
 		playerX -= stepX;
 		playerSY = .15;
+		playerAngle = 270;
 		isMovingL = false;
 		isMoving = false;
 	}
+	
 
-	for (int i = 0; i < 15; i++)
-	{
-		if(abs(stepObj[i].z - playerZ) < 45 && stepObj[i].z > playerZ)
-			{
-				stepObj[i].z -= 150;
-			}			
+		for (int i = 0; i < 15; i++)
+		{
+			if(abs(stepObj[i].z - playerZ) > 45 && stepObj[i].z > playerZ)
+				{
+					stepObj[i].z -= 150;
+					stepObj[i].needUpdate = true;
+				}			
 			if(stepObj[i].needUpdate)
 			{
-				stepObj[i].type = rand() % 2;	
-			}
-			if(stepObj[i].type == 0)
-			{
-				stepObj[i].model = road;
+				stepObj[i].type = rand() % 2;
+				if(stepObj[i].type == 0)
+				{
+					stepObj[i].model = road;
+				}
+				else if(stepObj[i].type == 1)
+				{
+					stepObj[i].model = grass;
+				}
 				stepObj[i].needUpdate = false;
 			}
-			else if(stepObj[i].type == 1)
-			{
-				stepObj[i].model = grass;
-				stepObj[i].needUpdate = false;
-			}
-	}
-
+		}
 
 	
 	winW = glutGet(GLUT_WINDOW_WIDTH);
