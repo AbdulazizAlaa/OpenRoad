@@ -20,33 +20,36 @@ using namespace std;
 void init();
 void initDisplay();
 void keyboard(unsigned char key, int x, int y);
+void mouse(int button, int state, int x, int y);
 void specialInput(int key, int x, int y);
 void reshape(int w, int h);
 void update();
 void display();
-void drawQuad(int x, int y);
 void player(ObjModel & player);
-void moveObject(ObjModel x, int xmin, int xmax, int z, int rate);
+void moveObject(ObjModel x,float  z, float  xmin, float xmax,float scale,float  y,int steps,int i=0);
 
-ObjModel mountain;
-ObjModel building;
-ObjModel charchater1;
-ObjModel car1;
+ObjModel mountain; //mountain model object
+ObjModel building; //building model object
+ObjModel charchater1; //first character model object
+ObjModel car1; //car model object
 
-float eyeX = 5.0f, eyeY = 10.0f, eyeZ = 30.0f;
-float centerX = 0.0f, centerY = 0.0f, centerZ = 0.0f;
-float playerX = 0.0f, playerY = 0.0f, playerZ = 20.0f;
-float playerSX = 0.09f, playerSY = 0.09f, playerSZ = 0.09f;
-float stepZ = 1, stepX = 1;
-bool isMovingF = false, isMovingB = false, isMovingL = false, isMovingR = false, isMoving = false;
-float playerLastZ = playerZ;
+float count_steps[]={0,0,0,0,0,0,0,0,0,0}; // array of counters for the car steps
+float eyeX = 5.0f, eyeY = 10.0f, eyeZ = -10.0f; // Look up eye (camera) position x,y,z
+float centerX = -5.0f, centerY = -5.0f, centerZ = -30.0f; // Look up center look position x,y,z
+float playerX = 0.0f, playerY = 0.0f, playerZ = -20.0f; // Player Position x,y,z
+float playerSX = 0.09f, playerSY = 0.09f, playerSZ = 0.09f; // Player scale x,y,z
+float stepZ = 1, stepX = 1; // Player step in y,z
+bool isMovingF = false, isMovingB = false, isMovingL = false, isMovingR = false, isMoving = false; // booleans for moving in every direction
+float playerLastZ = playerZ; // Last position of player for camera z position 
+float minWX = 0, maxWX = 0; // min and max position player can go in the window
+int winW = 500, winH = 700; // width and height of the window
 
 int main(int argc, char* argv[])
 {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH | GLUT_RGB);
 
-	glutInitWindowSize(700, 500);
+	glutInitWindowSize(winH, winW);
 	glutInitWindowPosition(0, 0);
 	glutCreateWindow("Crossy Road");
 
@@ -55,6 +58,7 @@ int main(int argc, char* argv[])
 	glutReshapeFunc(reshape);
 	glutIdleFunc(update);
 	glutDisplayFunc(display);
+	glutMouseFunc(mouse);
 
 	init();
 
@@ -136,7 +140,7 @@ void display()
 	//glMaterialfv(GL_FRONT, GL_SHININESS, shininess);
 
    	glPushMatrix();
-        glTranslatef(-20.0f, 0.0f, -12.0f);
+        glTranslatef(-20.0f, 0.0f, -30.0f);
 		glRotatef(90.0f, 0.0f, 1.0f, 0.0f);
 		glColor3f(0.0f,0.0f,0.0f);
         //glScalef(2.0f, 3.0f, 1.0f);
@@ -145,7 +149,7 @@ void display()
 
 
 	glPushMatrix();
-        glTranslatef(-20.0f, 0.0f, 7.0f);
+        glTranslatef(-20.0f, 0.0f, -40.0f);
 		glRotatef(90.0f, 0.0f, 1.0f, 0.0f);
 		glColor3f(0.0f,0.0f,0.0f);
         //glScalef(2.0f, 3.0f, 1.0f);
@@ -170,9 +174,48 @@ void display()
 	
 	player(charchater1);
 	
-	//moveObject(car1, 0, 5, 15, 30);
+	moveObject(car1,-10,1,10,0.09,0,2,0);
 
 	glutSwapBuffers();
+}
+
+void player(ObjModel & player)
+{
+	glPushMatrix();
+        glTranslatef(playerX, playerY, playerZ);
+		glRotatef(180.0f, 0.0f, 1.0f, 0.0f);
+        glScalef(playerSX, playerSY, playerSZ);
+        player.draw();
+    glPopMatrix();
+}
+
+void moveObject(ObjModel x, float  z, float  xmin, float xmax, float scale, float  y, int steps, int i)
+{
+		//i created an array of 10 floats assuming we will create no more than 10 cars per frame 
+		// steps is the no. that controls the interpolation of a car 
+		// i is a variable of each car which is used to get the proper element in count_steps which belongs to this car
+		int step1=(xmax-xmin)/steps;
+		count_steps[i]+=step1;
+
+		glPushMatrix();
+			glScalef(scale,scale,scale);
+			glTranslatef(count_steps[i], 0.0f, z);
+			glRotatef(90.0f, 0.0f, 1.0f, 0.0f);        
+			x.draw();
+		glPopMatrix();
+ 
+
+
+}
+
+void mouse(int button, int state, int x, int y)
+{
+	if(button == GLUT_LEFT_BUTTON){
+		//cout << x << ":" << y <<endl;
+		//cout << winW << ":" << winH << endl;
+		cout << abs(playerZ)-abs(playerLastZ) << endl;
+		cout << playerX << ":" << playerY << ":" << playerZ << endl;
+	}
 }
 
 void keyboard(unsigned char key, int x, int y)
@@ -213,14 +256,11 @@ void update()
 {
 	//update your variables here
 	sleep(2.0 / 60.0);
-	cout << sqrt(abs((playerZ*playerZ)-(playerLastZ*playerLastZ))) << endl;
-	if(sqrt(abs((playerZ*playerZ)-(playerLastZ*playerLastZ))) >= 7){
-		eyeZ -= 2.0f;
-		//eyeX -= 0.2f;
-		//eyeY += 5.0f;
-		centerX = playerX;
-		centerY = playerY;
-		centerZ = playerZ-20;
+	//cout << sqrt(abs((playerZ*playerZ)-(playerLastZ*playerLastZ))) << endl;
+
+	if(abs(playerZ)-abs(playerLastZ) >= 1){
+		eyeZ -= 1.0f;
+		centerZ -= 1.0f;
 		playerLastZ = playerZ;
 	}
 
@@ -228,10 +268,16 @@ void update()
 		playerSY = .09;
 	}else{
 		PlaySound(L"pingas.wav", NULL, SND_ASYNC|SND_FILENAME);
-
 	}
 
-	if(isMovingF){
+	if(playerX < -10.0f){
+		// do nothing
+		playerX = -10.0f;
+		playerSY = .09;
+	}if(playerX > 9.0f){
+		playerX = 9.0f;
+		playerSY = .09;
+	}else if(isMovingF){
 		playerZ -= stepZ;
 		playerSY = .15;
 		isMovingF = false;
@@ -253,42 +299,11 @@ void update()
 		isMoving = false;
 	}
 
-	cout << playerX << ":" << playerY << ":" << playerZ << endl;
+	winW = glutGet(GLUT_WINDOW_WIDTH);
+	winH = glutGet(GLUT_WINDOW_HEIGHT);
+
+	//cout << playerX << ":" << playerY << ":" << playerZ << endl;
 
 	//sleep(1.0 / 60.0);
 	glutPostRedisplay();
-}
-
-void player(ObjModel & player)
-{
-	glPushMatrix();
-        glTranslatef(playerX, playerY, playerZ);
-		glRotatef(180.0f, 0.0f, 1.0f, 0.0f);
-		//glColor3f(0.0f,0.0f,0.0f);
-        glScalef(playerSX, playerSY, playerSZ);
-        player.draw();
-    glPopMatrix();
-}
-
-void moveObject(ObjModel x, int xmin, int xmax, int z, int rate)
-{
-
-	
-		// here i am setting the initial object z to put it into the proper street 
-		glPushMatrix();
-        glTranslatef(0.0f, 0.0f, (float)z);
-		x.draw();
-		glPopMatrix();
-		// the formula xmax - xmin/ rate is  used such that the rate is the no. of steps taken by the object and this formula define 
-		// each how much diffrence in x is taken in each object for example xmin = 10 xmax =20 and rate is 50 so 20-10/50=0.2 
-		// that is the value of each step 
-	for (int i=xmin;i<xmax;i+=((xmax-xmin)/rate))
-	
-	{
-		glPushMatrix();
-        glTranslatef(float (i), 0.0f, 0.0f);
-		//glScalef(0.09f, 0.09f, 0.09f);
-        x.draw();
-		glPopMatrix();
-	}
 }
