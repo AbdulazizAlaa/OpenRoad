@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <Windows.h>
+#include <ctime>
 //#include <GL/gl.h>
 //#include <GL/glu.h>
 //#include <GL/glut.h>
@@ -32,6 +33,17 @@ ObjModel mountain;
 ObjModel building;
 ObjModel charchater1;
 ObjModel car1;
+ObjModel road;
+ObjModel grass;
+
+struct StepObj {
+	ObjModel model;
+	bool needUpdate;
+	int z;
+	int type;
+};
+
+StepObj stepObj[15];
 
 float eyeX = 5.0f, eyeY = 10.0f, eyeZ = 30.0f;
 float centerX = 0.0f, centerY = 0.0f, centerZ = 0.0f;
@@ -40,9 +52,12 @@ float playerSX = 0.09f, playerSY = 0.09f, playerSZ = 0.09f;
 float stepZ = 1, stepX = 1;
 bool isMovingF = false, isMovingB = false, isMovingL = false, isMovingR = false, isMoving = false;
 float playerLastZ = playerZ;
+float grassCoord[11];
+
 
 int main(int argc, char* argv[])
 {
+	srand(time(NULL));
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH | GLUT_RGB);
 
@@ -55,6 +70,27 @@ int main(int argc, char* argv[])
 	glutReshapeFunc(reshape);
 	glutIdleFunc(update);
 	glutDisplayFunc(display);
+
+	//Initialize step object buffer update bool
+	for (int i = 0; i < 15; i++)
+	{
+		stepObj[i].needUpdate = true;
+		stepObj[i].z = -10*i;
+		if(stepObj[i].needUpdate)
+		{
+			stepObj[i].type = rand() % 2;	
+		}
+		if(stepObj[i].type == 0)
+		{
+			stepObj[i].model = road;
+			stepObj[i].needUpdate = false;
+		}
+		else if(stepObj[i].type == 1)
+		{
+			stepObj[i].model = grass;
+			stepObj[i].needUpdate = false;
+		}	
+	}
 
 	init();
 
@@ -69,8 +105,11 @@ void init()
 	
 	mountain.load("mountain/lowpolymountains.obj");
 	charchater1.load("chr_old.obj");
-	//building.load("Building1.obj");
+	building.load("Building1.obj");
 	car1.load("car1.obj");
+	road.load("Road_Wide.obj");
+	grass.load("Grass.obj");
+
 
 }
 
@@ -135,6 +174,16 @@ void display()
 	//GLfloat shininess[] = {50};
 	//glMaterialfv(GL_FRONT, GL_SHININESS, shininess);
 
+	for (int i = 0; i < 15; i++)
+	{
+		glPushMatrix();
+			glTranslatef(0, -1, stepObj[i].z-(10));
+			glRotatef(90, 0, 1, 0);
+			stepObj[i].model.draw();
+		glPopMatrix();
+	}
+	
+
    	glPushMatrix();
         glTranslatef(-20.0f, 0.0f, -12.0f);
 		glRotatef(90.0f, 0.0f, 1.0f, 0.0f);
@@ -148,6 +197,7 @@ void display()
         glTranslatef(-20.0f, 0.0f, 7.0f);
 		glRotatef(90.0f, 0.0f, 1.0f, 0.0f);
 		glColor3f(0.0f,0.0f,0.0f);
+		
         //glScalef(2.0f, 3.0f, 1.0f);
         mountain.draw();
     glPopMatrix();
@@ -211,6 +261,7 @@ void specialInput(int key, int x, int y)
 
 void update()
 {
+
 	//update your variables here
 	sleep(2.0 / 60.0);
 	cout << sqrt(abs((playerZ*playerZ)-(playerLastZ*playerLastZ))) << endl;
@@ -251,6 +302,28 @@ void update()
 		playerSY = .15;
 		isMovingL = false;
 		isMoving = false;
+	}
+
+	for (int i = 0; i < 15; i++)
+	{
+		if(abs(stepObj[i].z - playerZ) < 45 && stepObj[i].z > playerZ)
+			{
+				stepObj[i].z -= 150;
+			}			
+			if(stepObj[i].needUpdate)
+			{
+				stepObj[i].type = rand() % 2;	
+			}
+			if(stepObj[i].type == 0)
+			{
+				stepObj[i].model = road;
+				stepObj[i].needUpdate = false;
+			}
+			else if(stepObj[i].type == 1)
+			{
+				stepObj[i].model = grass;
+				stepObj[i].needUpdate = false;
+			}
 	}
 
 	cout << playerX << ":" << playerY << ":" << playerZ << endl;
